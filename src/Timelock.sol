@@ -2,6 +2,11 @@
 pragma solidity ^0.8.17;
 
 contract Timelock {
+    // Custom errors
+    error InsufficientFunds();
+    error LockTimeStillActive();
+    error TransferFailed();
+
     //  Amount deposited is mapped to the user address
     mapping(address => uint256) public balances;
 
@@ -10,8 +15,12 @@ contract Timelock {
 
     function deposit() external payable {
         // Update balance and set unlocktime
-        balances[msg.sender] += msg.value;
-        unlockTime[msg.sender] = block.timestamp + 1 weeks;
+        // Unchecked logic because both values are unlikely to overflow
+
+        unchecked {
+            balances[msg.sender] += msg.value;
+            unlockTime[msg.sender] += 1 weeks;
+        }
     }
 
     function increaseLockTime(uint256 _secondsToIncrease) public {
@@ -21,10 +30,14 @@ contract Timelock {
 
     function withdraw() public {
         // Check that the sender has ether deposited in the contract and that the balance is greater than zero
-        require(balances[msg.sender] > 0, "INSUFFICIENT_FUNDS");
+        if (balances[msg.sender] == 0) {
+            revert InsufficientFunds();
+        }
 
         //Check that the current timestamp is greater than the time saved in the unlock time mapping
-        require(block.timestamp > unlockTime[msg.sender], "LOCK_PERIOD_ACTIVE");
+        if (block.timestamp < unlockTime[msg.sender]) {
+            revert LockTimeStillActive();
+        }
 
         //Update user's balance
         uint256 amount = balances[msg.sender];
@@ -32,6 +45,8 @@ contract Timelock {
 
         //Send balance back to the  caller
         (bool success, ) = msg.sender.call{value: amount}("");
-        require(success, "TRANSFER_FAILED");
+        if (!success) {
+            revert TransferFailed();
+        }
     }
 }
