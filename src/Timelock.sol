@@ -17,10 +17,8 @@ contract Timelock {
         // Update balance and set unlocktime
         // Unchecked logic because both values are unlikely to overflow
 
-        unchecked {
-            balances[msg.sender] += msg.value;
-            unlockTime[msg.sender] += 1 weeks;
-        }
+        balances[msg.sender] += msg.value;
+        unlockTime[msg.sender] += 1 weeks;
     }
 
     function increaseLockTime(uint256 _secondsToIncrease) public {
