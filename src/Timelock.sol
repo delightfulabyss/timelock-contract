@@ -15,7 +15,6 @@ contract Timelock {
 
     function deposit() external payable {
         // Update balance and set unlocktime
-        // Unchecked logic because both values are unlikely to overflow
 
         balances[msg.sender] += msg.value;
         unlockTime[msg.sender] += 1 weeks;
